@@ -1,0 +1,10 @@
+{"type":"user","sessionId":"ghi-789","cwd":"/home/user/project","timestamp":1700000000000,"message":{"content":"Get the latest issues from PROJ"}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"I'll get the latest issues."},{"type":"tool_use","id":"tu_1","name":"Bash","input":{"command":"gh issue list --repo org/proj"}}]}}
+{"type":"user","timestamp":1700000001000,"message":{"content":[{"type":"tool_result","tool_use_id":"tu_1","content":"Issue 1\nIssue 2"}]}}
+{"type":"user","timestamp":1700000002000,"message":{"content":"No, don't use GitHub. Use Jira instead."}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Sorry about that. I'll use Jira instead."},{"type":"tool_use","id":"tu_2","name":"mcp__atlassian__searchJiraIssuesUsingJql","input":{"cloudId":"test-cloud","jql":"project = PROJ ORDER BY created DESC","fields":["summary"],"maxResults":10}}]}}
+{"type":"user","timestamp":1700000003000,"message":{"content":[{"type":"tool_result","tool_use_id":"tu_2","content":"PROJ-10: New feature\nPROJ-9: Bug fix"}]}}
+{"type":"user","timestamp":1700000004000,"message":{"content":"Actually, switch to showing only bugs"}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"tu_3","name":"mcp__atlassian__searchJiraIssuesUsingJql","input":{"cloudId":"test-cloud","jql":"project = PROJ AND type = Bug ORDER BY created DESC","fields":["summary","priority"],"maxResults":10}}]}}
+{"type":"user","timestamp":1700000005000,"message":{"content":[{"type":"tool_result","tool_use_id":"tu_3","content":"PROJ-9: Bug fix"}]}}
+{"type":"user","timestamp":1700000006000,"message":{"content":"That looks good, thanks"}}

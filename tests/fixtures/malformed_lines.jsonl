@@ -1,0 +1,5 @@
+{"type":"user","sessionId":"def-456","cwd":"/home/user/project","timestamp":1700000000000,"message":{"content":"Hello"}}
+this is not json at all
+{"type":"assistant","message":{"content":[{"type":"text","text":"Hi there!"}]}}
+{broken json: [}
+{"type":"user","timestamp":1700000001000,"message":{"content":"Thanks"}}

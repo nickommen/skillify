@@ -1,0 +1,5 @@
+{"type":"user","sessionId":"abc-123","cwd":"/home/user/project","timestamp":1700000000000,"message":{"content":"Search for all open bugs in the PROJ project"}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"I'll search for open bugs."},{"type":"tool_use","id":"tu_1","name":"mcp__atlassian__searchJiraIssuesUsingJql","input":{"cloudId":"test-cloud","jql":"project = PROJ AND type = Bug AND status = Open","fields":["summary","status","priority"],"maxResults":50}}]}}
+{"type":"user","timestamp":1700000001000,"message":{"content":[{"type":"tool_result","tool_use_id":"tu_1","content":"Found 3 issues: PROJ-1, PROJ-2, PROJ-3"}]}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Found 3 open bugs. Let me write a summary."},{"type":"tool_use","id":"tu_2","name":"Write","input":{"file_path":"/tmp/bug-report.md","content":"# Bug Report\n\n- PROJ-1: Login fails\n- PROJ-2: Crash on save\n- PROJ-3: Slow load"}}]}}
+{"type":"user","timestamp":1700000002000,"message":{"content":[{"type":"tool_result","tool_use_id":"tu_2","content":"File written successfully"}]}}
