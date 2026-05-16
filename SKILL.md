@@ -2,11 +2,6 @@
 name: skillify
 description: >
   Convert a Claude Code conversation into a deterministic Python-scripted skill.
-  TRIGGER when: "skillify", "turn this into a skill", "make this a skill",
-  "create a skill from this conversation", "convert this to a skill",
-  "skillify this", "make a skill from this".
-  Do NOT use for: creating skills from scratch without a source conversation,
-  editing/refining existing skills, or generating prompt-only skills without scripts.
 user-invocable: true
 context: fork
 argument-hint: [session-id | "this"]
@@ -32,6 +27,8 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 - Generated skills must list all tools they call in `allowed-tools`.
 - Preserve the tools from the source conversation by default. Only convert MCP to REST if the user explicitly requests standalone mode.
 - Keep Bash commands simple to avoid Claude Code security prompts. Specifically: no multi-line commands, no heredocs, no inline `python3 -c`, no `$(cmd)` in file paths or arguments (capture to a variable first), and no `#` characters in quoted strings. If complex logic is needed, write it to a temporary Python script and execute that.
+- Generated skills must never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`. Use `/tmp/{skill-name}/` for transient intermediate files. Write final output to the current working directory (`$PWD`).
+- Follow the Procedure steps exactly in order. Do NOT read other skills for "patterns", explore the filesystem for examples, infer paths from the environment, or skip steps. All guidance for generating skills is in the procedure and the generation prompt template. The save location MUST come from the Step 3 interview — never invent or guess a path.
 
 ## Procedure
 
@@ -105,8 +102,7 @@ Read `/tmp/skillify-manifest.json` to get the full manifest.
 Read the user's skillify config if it exists at `~/.claude/skillify.json`. If the file does not exist, use empty defaults.
 
 Use config values as defaults in the interview. If no config exists, use built-in defaults:
-- `default_save_location`: `~/.claude/skills`
-- `symlink_base`: `~/.claude/skills`
+- `default_save_location`: `~/skills`
 
 Present the manifest summary to the user:
 - Total messages, tool calls, files written
@@ -116,14 +112,15 @@ Present the manifest summary to the user:
 - Corrections detected (user redirections, with scores)
 - Whether the conversation already produced scripts or a skill
 
-Then conduct a brief interview via AskUserQuestion:
+Then conduct a MANDATORY interview via AskUserQuestion. Do NOT skip this step. Do NOT proceed to Step 4 without completing Round 1. Every question below MUST be asked and answered before continuing.
 
-**Round 1:** Ask all of these in a single AskUserQuestion with multiple questions:
+**Round 1 (REQUIRED):** Ask all of these in a single AskUserQuestion with multiple questions:
 - Suggest a skill name based on the workflow. Let the user confirm or rename.
 - Suggest a one-line description (must include what it does AND when to use it). Let the user confirm or edit.
-- Ask where to save the skill:
-  - **Personal skills** (`{config.default_save_location}/{name}/`) — available across all projects (Recommended)
-  - **This repo** (`.claude/skills/{name}/`) — for repo-specific workflows
+- Ask where to save the skill. Do NOT save directly into `~/.claude/` — writes there trigger sensitive-file permission prompts.
+  - **Personal skills directory** (Recommended) — save to `{config.default_save_location}/{name}/`. A symlink to `~/.claude/skills/{name}` will be created in the final step for discovery.
+  - **This repo** (`.claude/skills/{name}/`) — for repo-specific workflows, discovered automatically (no symlink needed)
+  - **Custom path** — let the user specify any directory via "Other" (e.g., a shared skills repo). A symlink will be created for discovery.
 - Ask about tool mode:
   - **Preserve tools** (Recommended) — generated skill uses the same MCP tools and CLIs from the source conversation
   - **Standalone** — convert all tool calls to REST API calls using `urllib.request` (no MCP dependency)
@@ -214,7 +211,7 @@ If the user chooses "Write with changes", ask what to change, apply modification
 
 ### Step 6: Write and Validate
 
-Create the skill directory structure and write each file from the confirmed file list to its correct location. Ensure `{SAVE_LOCATION}/scripts/` and `{SAVE_LOCATION}/output/` directories exist.
+Create the skill directory structure and write each file from the confirmed file list to its correct location. Ensure `{SAVE_LOCATION}/scripts/` exists.
 
 Validate the generated skill:
 ```
@@ -235,10 +232,11 @@ Tell the user:
 1. **Files created** — list all files with their full paths
 2. **Tool dependencies** — list MCP servers or CLI tools required (if tool mode is "preserve")
 3. **Environment variables needed** — list each with a brief description
-4. **Symlink command** (if not already in `~/.claude/skills/`):
+4. **Install the skill** — if the save location is NOT `.claude/skills/{name}/` in the current repo, create a symlink for discovery:
    ```
    ln -sf {SAVE_LOCATION} ~/.claude/skills/{SKILL_NAME}
    ```
+   If the skill was saved to `.claude/skills/{name}/` in the current repo, skip the symlink — it is discovered automatically.
 5. **How to invoke** — `/{SKILL_NAME}` or `/{SKILL_NAME} [arguments]`
 6. **Suggest a test run** — recommend invoking the skill once to verify it works end-to-end
 

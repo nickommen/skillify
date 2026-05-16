@@ -104,7 +104,7 @@ Schema structure:
   "outputs": {
     "format": "markdown|json|text",
     "location": "stdout|file",
-    "file_pattern": "output/skill-name-{timestamp}.md"
+    "file_pattern": "skill-name-{timestamp}.md"
   }
 }
 ```
@@ -197,3 +197,4 @@ Output each file in a clearly marked section. The file paths are relative to the
 - **Use AskUserQuestion for user interaction** — during recovery, confirmations, and choices. The built-in "Other" option handles free-text fallback.
 - **validators.py runs first** — precondition failures should be caught before any real work starts, with clear messages about what's missing and how to fix it
 - **No inline bash complexity in SKILL.md** — never use `python3 -c "..."` with embedded code, multi-line heredocs, or complex shell pipelines in SKILL.md code blocks. These trigger Claude Code security prompts ("expansion obfuscation", "cannot be statically analyzed") that interrupt execution. Instead, put all logic in standalone Python scripts under `scripts/` and call them with simple one-line commands. Keep bash code blocks to single-line invocations like `python3 ${CLAUDE_SKILL_DIR}/scripts/foo.py "arg"`.
+- **Never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`** — the skill directory is discovered via a symlink from `~/.claude/skills/`, so writes there trigger sensitive-file permission prompts. Use `/tmp/{skill-name}/` for transient intermediate files (API responses, intermediate data). Write final output (reports, artifacts) to the current working directory (`$PWD`).

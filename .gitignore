@@ -1,6 +1,3 @@
-# Generated skills use output/ for timestamped run results.
-# Excluded here in case test runs produce local output.
-output/
 __pycache__/
 *.pyc
 .claude/
