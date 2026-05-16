@@ -26,11 +26,12 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 
 ## Rules
 
-- Default to AskUserQuestion for all user input. Use it for confirmations, choices, and decisions. The built-in "Other" option handles free-text fallback.
+- You MUST use the AskUserQuestion tool for all user input — confirmations, choices, and decisions. Do NOT ask questions as plain text in your response. The built-in "Other" option handles free-text fallback. If AskUserQuestion is unavailable, fall back to asking as plain text as a last resort.
 - Generated SKILL.md files must stay under 500 lines. Put large references in separate files.
 - Generated skill descriptions must state both what the skill does AND when to use it.
 - Generated skills must list all tools they call in `allowed-tools`.
 - Preserve the tools from the source conversation by default. Only convert MCP to REST if the user explicitly requests standalone mode.
+- Keep Bash commands simple to avoid Claude Code security prompts. Specifically: no multi-line commands, no heredocs, no inline `python3 -c`, no `$(cmd)` in file paths or arguments (capture to a variable first), and no `#` characters in quoted strings. If complex logic is needed, write it to a temporary Python script and execute that.
 
 ## Procedure
 
@@ -41,38 +42,26 @@ Resolve the source conversation JSONL file. Check these modes **in order** — u
 **Mode A — Current session (MANDATORY when arguments are empty or say "this"):**
 If `$ARGUMENTS` is empty, blank, unset, OR contains "this", "current", or "this conversation": use the current session. Do NOT show a picker. Do NOT ask the user to choose. Immediately resolve the JSONL path:
 ```
-ls -t ~/.claude/projects/$(echo "$PWD" | sed 's|/|-|g; s|^-||')/*.jsonl 2>/dev/null | head -1
+python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode recent --project-dir "$PWD"
 ```
-If found, proceed directly to Step 2.
+Parse the JSON output for the `path` field. If found, proceed directly to Step 2.
 
 **Mode B — Explicit session ID:**
 Only if `$ARGUMENTS` contains a UUID (pattern: `[0-9a-f-]{36}`):
 ```
-find ~/.claude/projects/ -name "$ARGUMENTS.jsonl" -type f 2>/dev/null
+python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode uuid --session-id "$ARGUMENTS"
 ```
-If not found, tell the user and ask for a different session ID.
+Parse the JSON output for the `path` field. If not found (exit code 1), tell the user and ask for a different session ID.
 
 **Mode C — Interactive picker:**
 Only if `$ARGUMENTS` contains text that is NOT empty and NOT "this"/"current" and NOT a UUID:
-1. Read `~/.claude/history.jsonl` and extract the 10 most recent unique sessions:
+1. List the 10 most recent unique sessions:
    ```
-   tac ~/.claude/history.jsonl | python3 -c "
-   import sys, json
-   seen = set()
-   for line in sys.stdin:
-       d = json.loads(line.strip())
-       sid = d.get('sessionId','')
-       if sid and sid not in seen:
-           seen.add(sid)
-           ts = d.get('timestamp',0)
-           from datetime import datetime
-           dt = datetime.fromtimestamp(ts/1000).strftime('%Y-%m-%d %H:%M')
-           print(f'{sid}  {dt}  {d.get(\"display\",\"\")[:80]}')
-           if len(seen) >= 10: break
-   "
+   python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode list
    ```
+   Parse the JSON array output — each entry has `session_id`, `timestamp`, and `display` fields.
 2. Present the list and let the user pick via AskUserQuestion.
-3. Locate the selected session's JSONL file.
+3. Locate the selected session's JSONL file using mode B with the chosen session_id.
 
 **Success criteria:** A valid JSONL file path is identified.
 
@@ -89,17 +78,10 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/parse_conversation.py "{JSONL_PATH}" > /tmp/
 If the parser fails, show the error and stop.
 
 Also gather supplementary context:
-1. If the source conversation's `project_path` is a git repo, run:
-   ```
-   git -C "{PROJECT_PATH}" log --oneline -10 2>/dev/null
-   git -C "{PROJECT_PATH}" diff --stat 2>/dev/null | head -20
-   ```
-2. Detect project type:
-   ```
-   for f in package.json pyproject.toml Makefile Cargo.toml go.mod Gemfile requirements.txt; do
-     [ -f "{PROJECT_PATH}/$f" ] && echo "Found: $f"
-   done
-   ```
+```
+python3 ${CLAUDE_SKILL_DIR}/scripts/gather_context.py "{PROJECT_PATH}"
+```
+Parse the JSON output for `is_git_repo`, `git_log`, `git_diff_stat`, and `project_files` fields.
 
 Read `/tmp/skillify-manifest.json` to get the full manifest.
 
@@ -109,10 +91,7 @@ Read `/tmp/skillify-manifest.json` to get the full manifest.
 
 ### Step 3: Load Config, Present Summary, and Interview
 
-Read the user's skillify config if it exists:
-```
-cat ~/.claude/skillify.json 2>/dev/null || echo '{}'
-```
+Read the user's skillify config if it exists at `~/.claude/skillify.json`. If the file does not exist, use empty defaults.
 
 Use config values as defaults in the interview. If no config exists, use built-in defaults:
 - `default_save_location`: `~/.claude/skills`
@@ -224,36 +203,13 @@ If the user chooses "Write with changes", ask what to change, apply modification
 
 ### Step 6: Write and Validate
 
-Create the skill directory structure:
-```
-mkdir -p {SAVE_LOCATION}/scripts
-mkdir -p {SAVE_LOCATION}/output
-```
+Create the skill directory structure and write each file from the confirmed file list to its correct location. Ensure `{SAVE_LOCATION}/scripts/` and `{SAVE_LOCATION}/output/` directories exist.
 
-Write each file from the confirmed file list to its correct location.
-
-Validate the generated Python script(s):
+Validate the generated skill:
 ```
-python3 -c "import ast; ast.parse(open('{SAVE_LOCATION}/scripts/{script_name}.py').read()); print('Python syntax OK')"
+python3 ${CLAUDE_SKILL_DIR}/scripts/validate_skill.py "{SAVE_LOCATION}"
 ```
-
-Validate the SKILL.md frontmatter:
-```
-python3 -c "
-import re
-text = open('{SAVE_LOCATION}/SKILL.md').read()
-match = re.match(r'^---\n(.+?)\n---', text, re.DOTALL)
-if not match:
-    print('ERROR: No YAML frontmatter found')
-    exit(1)
-fm = match.group(1)
-missing = [k for k in ['name', 'description', 'user-invocable'] if k + ':' not in fm]
-if missing:
-    print(f'WARNING: Missing frontmatter keys: {missing}')
-else:
-    print('Frontmatter structure OK')
-"
-```
+Parse the JSON output. If `valid` is false, fix the errors listed in the `errors` array and re-validate.
 
 If either validation fails, fix the syntax error and re-validate.
 
