@@ -101,12 +101,18 @@ skillify/
   scripts/
     parse_conversation.py           # JSONL conversation parser
     parse_agent_output.py           # Agent output file extractor
+    find_session.py                 # Session JSONL resolution (recent/uuid/list)
+    gather_context.py               # Project context gathering (git, project type)
+    validate_skill.py               # Generated skill validation (syntax, frontmatter)
   prompts/
     generate_skill.md               # Generation agent prompt template
     rest_api_reference.md           # REST endpoint reference (standalone mode)
   tests/
     test_parse_conversation.py      # Parser tests
     test_parse_agent_output.py      # Agent output parser tests
+    test_find_session.py            # Session resolution tests
+    test_gather_context.py          # Context gathering tests
+    test_validate_skill.py          # Skill validation tests
     fixtures/                       # Synthetic test data
   install.sh                        # One-line installer
 ```
