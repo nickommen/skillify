@@ -28,7 +28,7 @@ HISTORY_FILE = Path.home() / ".claude" / "history.jsonl"
 
 
 def find_recent(project_dir):
-    slug = project_dir.lstrip("/").replace("/", "-")
+    slug = project_dir.replace("/", "-")
     project_path = CLAUDE_PROJECTS_DIR / slug
     if not project_path.is_dir():
         return None

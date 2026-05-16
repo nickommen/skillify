@@ -8,7 +8,7 @@ from scripts.find_session import find_by_uuid, find_recent, list_sessions
 
 class TestFindRecent:
     def test_finds_most_recent_jsonl(self, tmp_path, monkeypatch):
-        slug = "home-user-myproject"
+        slug = "-home-user-myproject"
         project_dir = tmp_path / "projects" / slug
         project_dir.mkdir(parents=True)
 
@@ -29,15 +29,15 @@ class TestFindRecent:
         assert find_recent("/nonexistent/project") is None
 
     def test_returns_none_for_empty_project_dir(self, tmp_path, monkeypatch):
-        slug = "home-user-emptyproject"
+        slug = "-home-user-emptyproject"
         project_dir = tmp_path / "projects" / slug
         project_dir.mkdir(parents=True)
 
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
         assert find_recent("/home/user/emptyproject") is None
 
-    def test_strips_leading_slash_from_path(self, tmp_path, monkeypatch):
-        slug = "home-user-project"
+    def test_converts_path_to_slug(self, tmp_path, monkeypatch):
+        slug = "-home-user-project"
         project_dir = tmp_path / "projects" / slug
         project_dir.mkdir(parents=True)
         f = project_dir / "abc.jsonl"
@@ -48,7 +48,7 @@ class TestFindRecent:
         assert result is not None
 
     def test_ignores_non_jsonl_files(self, tmp_path, monkeypatch):
-        slug = "home-user-proj"
+        slug = "-home-user-proj"
         project_dir = tmp_path / "projects" / slug
         project_dir.mkdir(parents=True)
         (project_dir / "notes.txt").write_text("not a jsonl")
