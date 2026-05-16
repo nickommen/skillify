@@ -58,8 +58,7 @@ Optionally create `~/.claude/skillify.json` to set defaults:
 
 ```json
 {
-  "default_save_location": "~/.claude/skills",
-  "symlink_base": "~/.claude/skills",
+  "default_save_location": "~/skills",
   "author": ""
 }
 ```
@@ -78,7 +77,6 @@ skill-name/
     run.py              # Main deterministic script (stdlib-only)
     validators.py       # Precondition checks and output validation
   skill.schema.json     # Input/output schema (when applicable)
-  output/               # Timestamped run results (gitignored)
 ```
 
 Generated skills are designed to be:
