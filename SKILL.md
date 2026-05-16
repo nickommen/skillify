@@ -39,12 +39,13 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 
 Resolve the source conversation JSONL file. Check these modes **in order** — use the FIRST one that matches and do NOT fall through to later modes.
 
-**Mode A — Current session (MANDATORY when arguments are empty or say "this"):**
-If `$ARGUMENTS` is empty, blank, unset, OR contains "this", "current", or "this conversation": use the current session. Do NOT show a picker. Do NOT ask the user to choose. Immediately resolve the JSONL path:
+**Mode A — "this" (auto-select most recent session):**
+If `$ARGUMENTS` contains "this", "current", or "this conversation": auto-select the most recent session for the current project directory. Do NOT show a picker.
+
 ```
 python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode recent --project-dir "$PWD"
 ```
-Parse the JSON output for the `path` field. If found, proceed directly to Step 2.
+Parse the JSON output for the `path` field. If not found (exit code 1), fall through to Mode D (interactive picker).
 
 **Mode B — Explicit session ID:**
 Only if `$ARGUMENTS` contains a UUID (pattern: `[0-9a-f-]{36}`):
@@ -53,15 +54,25 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode uuid --session-id "$A
 ```
 Parse the JSON output for the `path` field. If not found (exit code 1), tell the user and ask for a different session ID.
 
-**Mode C — Interactive picker:**
-Only if `$ARGUMENTS` contains text that is NOT empty and NOT "this"/"current" and NOT a UUID:
-1. List the 10 most recent unique sessions:
+**Mode C — Named session (from /rename):**
+Only if `$ARGUMENTS` contains text that is NOT empty, NOT "this"/"current", and NOT a UUID:
+```
+python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode name --session-name "$ARGUMENTS"
+```
+Parse the JSON output for the `path` field. If not found (exit code 1), fall through to Mode D (interactive picker).
+
+**Mode D — Interactive picker:**
+If `$ARGUMENTS` is empty, blank, or unset — OR if Mode A/C fell through because no session was found:
+1. List recent sessions:
    ```
    python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode list
    ```
-   Parse the JSON array output — each entry has `session_id`, `timestamp`, and `display` fields.
-2. Present the list and let the user pick via AskUserQuestion.
-3. Locate the selected session's JSONL file using mode B with the chosen session_id.
+   Parse the JSON array output — each entry has `session_id`, `timestamp`, `display`, and `project` fields.
+2. Present the list via AskUserQuestion. Format each option as `{timestamp} [{project}] {display}` so the user can identify sessions by time, project directory, and description.
+3. Locate the selected session's JSONL file:
+   ```
+   python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode uuid --session-id "{SELECTED_SESSION_ID}"
+   ```
 
 **Success criteria:** A valid JSONL file path is identified.
 
