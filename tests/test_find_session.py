@@ -162,7 +162,8 @@ class TestGetFirstUserMessage:
         project_dir = tmp_path / "projects" / "test"
         project_dir.mkdir(parents=True)
         self._write_session(project_dir / "sess-2.jsonl", [
-            {"type": "user", "message": {"role": "human", "content": "<ide_opened_file>foo</ide_opened_file>"}},
+            {"type": "user", "message": {"role": "human",
+                "content": "<ide_opened_file>foo</ide_opened_file>"}},
             {"type": "user", "message": {"role": "human", "content": "Real question here"}},
         ])
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")

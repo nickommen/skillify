@@ -17,7 +17,8 @@ Usage:
 
 Output (JSON to stdout):
   recent/uuid/name: {"path": "/absolute/path/to/session.jsonl"}
-  list:             [{"session_id": "...", "timestamp": "...", "display": "...", "project": "..."}, ...]
+  list:             [{"session_id": "...", "timestamp": "...",
+                      "display": "...", "project": "..."}, ...]
 """
 
 import argparse
@@ -183,7 +184,8 @@ def list_sessions(count=10, exclude_session=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Resolve Claude Code conversation JSONL files")
-    parser.add_argument("--mode", required=True, choices=["parent", "recent", "uuid", "name", "list"])
+    modes = ["parent", "recent", "uuid", "name", "list"]
+    parser.add_argument("--mode", required=True, choices=modes)
     parser.add_argument("--project-dir", help="Project directory (for recent mode)")
     parser.add_argument("--session-id", help="Session UUID (for uuid mode)")
     parser.add_argument("--session-name", help="Session name (for name mode)")
