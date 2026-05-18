@@ -1,0 +1,46 @@
+name: Bug Report
+description: Report something that isn't working correctly
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: Tell us what you see.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: What should have happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce the issue?
+      placeholder: |
+        1. Run `/skillify ...`
+        2. Select ...
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "3.12.4"
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 15.1 / Ubuntu 24.04 / etc."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste any error messages or logs.
+      render: shell
