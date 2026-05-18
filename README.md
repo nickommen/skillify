@@ -40,6 +40,13 @@ After installation, `/skillify` will be available in Claude Code.
 
 Also triggers on natural language: "turn this into a skill", "make this a skill", "create a skill from this conversation", "convert this to a skill"
 
+## Tips
+
+**Start in a dedicated project directory.** When exploring the task you want to
+skillify, do that work in a new directory — ideally the one that will become the
+skill's repo. This avoids conflicting Claude Code sessions in your main project
+and makes session selection straightforward when you run `/skillify`.
+
 ## How It Works
 
 1. **Identify** the source conversation — current session, explicit session ID, or interactive picker from recent history
