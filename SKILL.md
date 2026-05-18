@@ -75,7 +75,7 @@ If `$ARGUMENTS` is empty, blank, or unset — OR if Mode A/C fell through becaus
 
 ---
 
-### Step 2: Parse and Gather Context
+### Step 2: Parse Conversation
 
 Run the conversation parser to extract the workflow manifest:
 
@@ -84,12 +84,6 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/parse_conversation.py "{JSONL_PATH}" > /tmp/
 ```
 
 If the parser fails, show the error and stop.
-
-Also gather supplementary context:
-```
-python3 ${CLAUDE_SKILL_DIR}/scripts/gather_context.py "{PROJECT_PATH}"
-```
-Parse the JSON output for `is_git_repo`, `git_log`, `git_diff_stat`, and `project_files` fields.
 
 Read `/tmp/skillify-manifest.json` to get the full manifest.
 
