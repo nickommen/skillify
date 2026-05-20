@@ -42,7 +42,7 @@ Also triggers on natural language: "turn this into a skill", "make this a skill"
 
 ## How It Works
 
-1. **Identify** the source conversation — current session, explicit session ID, or interactive picker from recent history
+1. **Identify** the source conversation — current project session or explicit session UUID
 2. **Parse** the conversation JSONL into a compact workflow manifest using `parse_conversation.py`
 3. **Supplement** with git state and project type detection for additional context
 4. **Interview** the user to confirm skill name, description, save location, tool mode, and workflow steps. For non-trivial workflows, also captures preconditions, idempotency, and escalation rules.
