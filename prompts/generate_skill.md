@@ -113,9 +113,10 @@ Skip this file only for skills with no arguments and trivial output.
    - `allowed-tools`: list every tool the skill calls. Use prefix patterns like `Bash(gh *)` for CLI tools. Include `Skill(other-skill)` if composing with other skills.
    - `argument-hint`: show expected args in autocomplete (e.g., `"[issue-number]"`)
 3. **Minimal orchestration** — the procedure should be:
-   - Step 1: Run validators, create output directory, run the Python script, capturing output to a timestamped file
+   - Step 1: Create an isolated workspace directory with `mktemp -d -t {skill-name}-XXXXXXXX`, run validators, run the Python script, capturing output to a timestamped file
    - Step 2: Read and present the output
    - Step 3: Provide a brief summary with key metrics
+   - Cleanup: Remove the workspace directory with `rm -rf {WORKSPACE_DIR}`
 4. **Per-step success criteria** — each step must state what proves it succeeded
 5. **Rules section** — encode user corrections as hard rules that must be followed
 6. **Agent delegation** — only include an Agent step if the original workflow genuinely needed semantic grouping or natural language summarization. If the workflow is purely data gathering + transformation + reporting, no Agent is needed.
@@ -188,4 +189,4 @@ Output each file in a clearly marked section. The file paths are relative to the
 - **Use AskUserQuestion for user interaction** — during recovery, confirmations, and choices. The built-in "Other" option handles free-text fallback.
 - **validators.py runs first** — precondition failures should be caught before any real work starts, with clear messages about what's missing and how to fix it
 - **No inline bash complexity in SKILL.md** — never use `python3 -c "..."` with embedded code, multi-line heredocs, or complex shell pipelines in SKILL.md code blocks. These trigger Claude Code security prompts ("expansion obfuscation", "cannot be statically analyzed") that interrupt execution. Instead, put all logic in standalone Python scripts under `scripts/` and call them with simple one-line commands. Keep bash code blocks to single-line invocations like `python3 ${CLAUDE_SKILL_DIR}/scripts/foo.py "arg"`.
-- **Never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`** — the skill directory is discovered via a symlink from `~/.claude/skills/`, so writes there trigger sensitive-file permission prompts. Use `/tmp/{skill-name}/` for transient intermediate files (API responses, intermediate data). Write final output (reports, artifacts) to the current working directory (`$PWD`).
+- **Never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`** — the skill directory is discovered via a symlink from `~/.claude/skills/`, so writes there trigger sensitive-file permission prompts. For transient intermediate files (API responses, intermediate data), create an isolated workspace with `mktemp -d -t {skill-name}-XXXXXXXX` at the start of the procedure and clean it up with `rm -rf` in a final Cleanup step. Write final output (reports, artifacts) to the current working directory (`$PWD`).

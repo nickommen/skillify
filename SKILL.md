@@ -31,7 +31,7 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 - Generated skills must list all tools they call in `allowed-tools`.
 - Generated skills preserve the same MCP tools and CLIs from the source conversation.
 - Keep Bash commands simple to avoid Claude Code security prompts. Specifically: no multi-line commands, no heredocs, no inline `python3 -c`, no `$(cmd)` in file paths or arguments (capture to a variable first), and no `#` characters in quoted strings. If complex logic is needed, write it to a temporary Python script and execute that.
-- Generated skills must never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`. Use `/tmp/{skill-name}/` for transient intermediate files. Write final output to the current working directory (`$PWD`).
+- Generated skills must never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`. For transient intermediate files, create an isolated workspace with `mktemp -d -t {skill-name}-XXXXXXXX` at the start of the procedure and clean it up with `rm -rf` in a final Cleanup step. Write final output to the current working directory (`$PWD`).
 - Follow the Procedure steps exactly in order. Do NOT skip steps. The save location MUST come from the Step 3 interview — never invent or guess a path.
 
 ## Procedure
@@ -55,15 +55,23 @@ Parse the JSON output and handle based on the key present:
 
 ### Step 2: Parse Conversation
 
+Create an isolated workspace directory for this run's intermediate files:
+
+```
+mktemp -d -t skillify-XXXXXXXX
+```
+
+Capture the output path — this is the `{WORKSPACE_DIR}` for all intermediate files in this run.
+
 Run the conversation parser to extract the workflow manifest:
 
 ```
-python3 ${CLAUDE_SKILL_DIR}/scripts/parse_conversation.py "{JSONL_PATH}" > /tmp/skillify-manifest.json
+python3 ${CLAUDE_SKILL_DIR}/scripts/parse_conversation.py "{JSONL_PATH}" > {WORKSPACE_DIR}/manifest.json
 ```
 
 If the parser fails, show the error and stop.
 
-Read `/tmp/skillify-manifest.json` to get the full manifest.
+Read `{WORKSPACE_DIR}/manifest.json` to get the full manifest.
 
 **Success criteria:** Manifest JSON is valid and contains at least 1 tool call.
 
@@ -134,12 +142,12 @@ Substitute the placeholders:
 
 Launch an Agent with the substituted prompt. The Agent will output file contents in clearly marked `## FILE:` sections.
 
-Save the Agent's output to a temporary file, then parse it deterministically:
+Save the Agent's output to `{WORKSPACE_DIR}/agent-output.txt`, then parse it deterministically:
 ```
-python3 ${CLAUDE_SKILL_DIR}/scripts/parse_agent_output.py /tmp/skillify-agent-output.txt > /tmp/skillify-files.json
+python3 ${CLAUDE_SKILL_DIR}/scripts/parse_agent_output.py {WORKSPACE_DIR}/agent-output.txt > {WORKSPACE_DIR}/files.json
 ```
 
-Read `/tmp/skillify-files.json` to get the list of files.
+Read `{WORKSPACE_DIR}/files.json` to get the list of files.
 
 **Success criteria:** Parser extracts at least SKILL.md and one Python script.
 
@@ -196,3 +204,13 @@ Tell the user:
 6. **Suggest a test run** — recommend invoking the skill once to verify it works end-to-end
 
 **Success criteria:** User has all information needed to use the new skill.
+
+---
+
+### Cleanup
+
+Remove the workspace directory used for intermediate files:
+
+```
+rm -rf {WORKSPACE_DIR}
+```
