@@ -69,12 +69,7 @@ Read `/tmp/skillify-manifest.json` to get the full manifest.
 
 ---
 
-### Step 3: Load Config, Present Summary, and Interview
-
-Read the user's skillify config if it exists at `~/.claude/skillify.json`. If the file does not exist, use empty defaults.
-
-Use config values as defaults in the interview. If no config exists, use built-in defaults:
-- `default_save_location`: `~/skills`
+### Step 3: Present Summary and Interview
 
 Present the manifest summary to the user:
 - Total messages, tool calls, files written
@@ -90,7 +85,7 @@ Then conduct a MANDATORY interview via AskUserQuestion. Do NOT skip this step. D
 - Suggest a skill name based on the workflow. Let the user confirm or rename.
 - Suggest a one-line description (must include what it does AND when to use it). Let the user confirm or edit.
 - Ask where to save the skill. Do NOT save directly into `~/.claude/` — writes there trigger sensitive-file permission prompts.
-  - **Personal skills directory** (Recommended) — save to `{config.default_save_location}/{name}/`. A symlink to `~/.claude/skills/{name}` will be created in the final step for discovery.
+  - **Personal skills directory** (Recommended) — save to `~/skills/{name}/`. A symlink to `~/.claude/skills/{name}` will be created in the final step for discovery.
   - **This repo** (`.claude/skills/{name}/`) — for repo-specific workflows, discovered automatically (no symlink needed)
   - **Custom path** — let the user specify any directory via "Other" (e.g., a shared skills repo). A symlink will be created for discovery.
 - Ask about tool mode:
