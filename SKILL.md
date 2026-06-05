@@ -29,7 +29,7 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 - Generated SKILL.md files must stay under 500 lines. Put large references in separate files.
 - Generated skill descriptions must state both what the skill does AND when to use it.
 - Generated skills must list all tools they call in `allowed-tools`.
-- Preserve the tools from the source conversation by default. Only convert MCP to REST if the user explicitly requests standalone mode.
+- Generated skills preserve the same MCP tools and CLIs from the source conversation.
 - Keep Bash commands simple to avoid Claude Code security prompts. Specifically: no multi-line commands, no heredocs, no inline `python3 -c`, no `$(cmd)` in file paths or arguments (capture to a variable first), and no `#` characters in quoted strings. If complex logic is needed, write it to a temporary Python script and execute that.
 - Generated skills must never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`. Use `/tmp/{skill-name}/` for transient intermediate files. Write final output to the current working directory (`$PWD`).
 - Follow the Procedure steps exactly in order. Do NOT skip steps. The save location MUST come from the Step 3 interview — never invent or guess a path.
@@ -88,10 +88,6 @@ Then conduct a MANDATORY interview via AskUserQuestion. Do NOT skip this step. D
   - **Personal skills directory** (Recommended) — save to `~/skills/{name}/`. A symlink to `~/.claude/skills/{name}` will be created in the final step for discovery.
   - **This repo** (`.claude/skills/{name}/`) — for repo-specific workflows, discovered automatically (no symlink needed)
   - **Custom path** — let the user specify any directory via "Other" (e.g., a shared skills repo). A symlink will be created for discovery.
-- Ask about tool mode:
-  - **Preserve tools** (Recommended) — generated skill uses the same MCP tools and CLIs from the source conversation
-  - **Standalone** — convert all tool calls to REST API calls using `urllib.request` (no MCP dependency)
-
 **Round 2 (skip for simple workflows with ≤3 tool call phases):**
 - Present the identified workflow steps as a numbered list (derived from the tool call phases in the manifest).
 - Ask via AskUserQuestion if anything is missing, should be changed, or needs special handling.
@@ -99,7 +95,7 @@ Then conduct a MANDATORY interview via AskUserQuestion. Do NOT skip this step. D
 - Ask about idempotency: "Is it safe to run this multiple times?"
 - Ask about escalation: "When should the skill stop and ask for help vs. retry automatically?"
 
-**Success criteria:** Skill name, description, save location, tool mode, and workflow steps are confirmed.
+**Success criteria:** Skill name, description, save location, and workflow steps are confirmed.
 
 ---
 
@@ -126,23 +122,16 @@ Read the agent prompt template:
 ${CLAUDE_SKILL_DIR}/prompts/generate_skill.md
 ```
 
-If the user chose standalone mode in Step 3, also read the REST API reference:
-```
-${CLAUDE_SKILL_DIR}/prompts/rest_api_reference.md
-```
-
 Substitute the placeholders:
 - `{WORKFLOW_MANIFEST}` — the full manifest JSON from Step 2
 - `{SKILL_NAME}` — the confirmed skill name from Step 3
 - `{SAVE_LOCATION}` — the confirmed save path from Step 3
 - `{CORRECTIONS}` — the corrections array from the manifest (or "None detected" if empty)
 - `{EXISTING_SCRIPTS}` — content of existing scripts from Step 4 (or "None — generate from scratch" if regenerating)
-- `{TOOL_MODE}` — "preserve" or "standalone" from Step 3
 - `{TOOL_DEPENDENCIES}` — list of MCP servers and CLI tools the workflow requires
 - `{PRECONDITIONS}` — from Round 2 interview (or "None specified")
 - `{IDEMPOTENCY}` — from Round 2 interview (or "Not specified")
 - `{ESCALATION_RULES}` — from Round 2 interview (or "Default: stop and ask on any error")
-- `{MCP_API_MAPPINGS}` — contents of `rest_api_reference.md` if standalone mode, otherwise "N/A — preserving source tools"
 
 Launch an Agent with the substituted prompt. The Agent will output file contents in clearly marked `## FILE:` sections.
 
@@ -197,7 +186,7 @@ If either validation fails, fix the syntax error and re-validate.
 Tell the user:
 
 1. **Files created** — list all files with their full paths
-2. **Tool dependencies** — list MCP servers or CLI tools required (if tool mode is "preserve")
+2. **Tool dependencies** — list MCP servers or CLI tools required
 3. **Environment variables needed** — list each with a brief description
 4. **Install the skill** — if the save location is NOT `.claude/skills/{name}/` in the current repo, create a symlink for discovery:
    ```
