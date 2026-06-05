@@ -85,8 +85,7 @@ Then conduct a MANDATORY interview via AskUserQuestion. Do NOT skip this step. D
 - Suggest a skill name based on the workflow. Let the user confirm or rename.
 - Suggest a one-line description (must include what it does AND when to use it). Let the user confirm or edit.
 - Ask where to save the skill. Do NOT save directly into `~/.claude/` — writes there trigger sensitive-file permission prompts.
-  - **Personal skills directory** (Recommended) — save to `~/skills/{name}/`. A symlink to `~/.claude/skills/{name}` will be created in the final step for discovery.
-  - **This repo** (`.claude/skills/{name}/`) — for repo-specific workflows, discovered automatically (no symlink needed)
+  - **Current directory** (Recommended) — save to the current working directory (`$PWD/{name}/`). A symlink to `~/.claude/skills/{name}` will be created in the final step for discovery.
   - **Custom path** — let the user specify any directory via "Other" (e.g., a shared skills repo). A symlink will be created for discovery.
 **Round 2 (skip for simple workflows with ≤3 tool call phases):**
 - Present the identified workflow steps as a numbered list (derived from the tool call phases in the manifest).
@@ -188,11 +187,11 @@ Tell the user:
 1. **Files created** — list all files with their full paths
 2. **Tool dependencies** — list MCP servers or CLI tools required
 3. **Environment variables needed** — list each with a brief description
-4. **Install the skill** — if the save location is NOT `.claude/skills/{name}/` in the current repo, create a symlink for discovery:
+4. **Install the skill** — create a symlink for discovery:
    ```
    ln -sf {SAVE_LOCATION} ~/.claude/skills/{SKILL_NAME}
    ```
-   If the skill was saved to `.claude/skills/{name}/` in the current repo, skip the symlink — it is discovered automatically.
+   If `{SAVE_LOCATION}` is already inside `.claude/skills/`, skip the symlink — it is discovered automatically.
 5. **How to invoke** — `/{SKILL_NAME}` or `/{SKILL_NAME} [arguments]`
 6. **Suggest a test run** — recommend invoking the skill once to verify it works end-to-end
 
