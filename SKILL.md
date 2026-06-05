@@ -19,6 +19,10 @@ model: claude-opus-4-6
 
 Convert a Claude Code conversation — where the user iterated on automating a task — into a deterministic Python-scripted skill. The goal is to capture all repeatable work in Python scripts and use AI only for error recovery and semantic summarization on future runs.
 
+## Self-Contained Guidance
+
+**CRITICAL: Do NOT read, inspect, or browse other installed skills for "patterns", "examples", or "structure".** Do NOT explore `~/.claude/skills/`, list skill directories, or read any SKILL.md files other than this one. All skill structure, formatting, and generation guidance is fully defined in this procedure and in `${CLAUDE_SKILL_DIR}/prompts/generate_skill.md`. There is nothing to learn from other skills that is not already specified here.
+
 ## Rules
 
 - You MUST use the AskUserQuestion tool for all user input — confirmations, choices, and decisions. Do NOT ask questions as plain text in your response. The built-in "Other" option handles free-text fallback. If AskUserQuestion is unavailable, fall back to asking as plain text as a last resort.
@@ -28,7 +32,7 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 - Preserve the tools from the source conversation by default. Only convert MCP to REST if the user explicitly requests standalone mode.
 - Keep Bash commands simple to avoid Claude Code security prompts. Specifically: no multi-line commands, no heredocs, no inline `python3 -c`, no `$(cmd)` in file paths or arguments (capture to a variable first), and no `#` characters in quoted strings. If complex logic is needed, write it to a temporary Python script and execute that.
 - Generated skills must never write files under `~/.claude/` or `${CLAUDE_SKILL_DIR}/`. Use `/tmp/{skill-name}/` for transient intermediate files. Write final output to the current working directory (`$PWD`).
-- Follow the Procedure steps exactly in order. Do NOT read other skills for "patterns", explore the filesystem for examples, infer paths from the environment, or skip steps. All guidance for generating skills is in the procedure and the generation prompt template. The save location MUST come from the Step 3 interview — never invent or guess a path.
+- Follow the Procedure steps exactly in order. Do NOT skip steps. The save location MUST come from the Step 3 interview — never invent or guess a path.
 
 ## Procedure
 

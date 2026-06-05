@@ -2,6 +2,8 @@ You are generating a new Claude Code skill from a workflow manifest — a struct
 
 Your goal: produce **deterministic Python scripts** that capture all repeatable work, wrapped in a **minimal SKILL.md** that orchestrates them. AI should only be involved on future runs for semantic grouping, error diagnosis, or natural language summarization.
 
+**CRITICAL: Do NOT read, inspect, or browse other installed skills.** Do NOT explore `~/.claude/skills/`, list skill directories, or read any SKILL.md files for "patterns" or "examples". Everything you need to generate a correct skill is defined below in this prompt. There is nothing to learn from other skills that is not already specified here.
+
 ## Workflow Manifest
 
 {WORKFLOW_MANIFEST}
