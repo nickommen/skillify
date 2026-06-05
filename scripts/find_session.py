@@ -2,8 +2,8 @@
 """Resolve a Claude Code conversation JSONL file.
 
 Usage:
-  python3 find_session.py --mode resolve --project-dir /path/to/project
-  python3 find_session.py --mode resolve --arguments "<uuid>" --project-dir /path/to/project
+  python3 find_session.py --mode resolve
+  python3 find_session.py --mode resolve --arguments "<uuid>"
 
 Output (JSON to stdout):
   {"path": "/absolute/path/to/session.jsonl"}   — session resolved
@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 CLAUDE_PROJECTS_DIR = Path.home() / ".claude" / "projects"
+CLAUDE_SESSIONS_DIR = Path.home() / ".claude" / "sessions"
 
 UUID_RE = re.compile(
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
@@ -25,14 +26,41 @@ UUID_RE = re.compile(
 )
 
 
-def find_recent(project_dir):
-    slug = project_dir.replace("/", "-")
-    project_path = CLAUDE_PROJECTS_DIR / slug
-    if not project_path.is_dir():
+def get_ancestor_pids():
+    """Yield PIDs walking up the process tree from this process."""
+    pid = os.getpid()
+    while pid and pid != 1:
+        yield pid
+        try:
+            with open(f"/proc/{pid}/stat") as f:
+                fields = f.read().split()
+                pid = int(fields[3])
+        except (OSError, IndexError, ValueError):
+            break
+
+
+def find_by_pid():
+    """Find the current session JSONL by walking up the process tree.
+
+    Looks for a matching {pid}.json in ~/.claude/sessions/, extracts the
+    sessionId, then locates the corresponding JSONL via find_by_uuid().
+    """
+    if not CLAUDE_SESSIONS_DIR.is_dir():
         return None
-    jsonl_files = sorted(project_path.glob("*.jsonl"), key=os.path.getmtime, reverse=True)
-    for f in jsonl_files:
-        return str(f)
+
+    session_files = {f.stem: f for f in CLAUDE_SESSIONS_DIR.glob("*.json")}
+    if not session_files:
+        return None
+
+    for pid in get_ancestor_pids():
+        session_file = session_files.get(str(pid))
+        if session_file:
+            try:
+                data = json.loads(session_file.read_text())
+                return find_by_uuid(data["sessionId"])
+            except (json.JSONDecodeError, KeyError, OSError):
+                return None
+
     return None
 
 
@@ -44,22 +72,16 @@ def find_by_uuid(session_id):
     return None
 
 
-def resolve(arguments, project_dir=None):
+def resolve(arguments):
     args_stripped = (arguments or "").strip()
     args_lower = args_stripped.lower()
 
     if not args_stripped or args_lower in ("this", "current", "this conversation"):
-        if project_dir:
-            path = find_recent(project_dir)
-            if path:
-                return {"path": path}
-        slug = project_dir.replace("/", "-") if project_dir else "<project-slug>"
+        path = find_by_pid()
+        if path:
+            return {"path": path}
         return {
-            "error": (
-                f"No session found for this project directory.\n"
-                f"List available sessions with: ls ~/.claude/projects/{slug}/\n"
-                f"Then re-run: /skillify <session-uuid>"
-            ),
+            "error": "Could not detect session. Use: /skillify <uuid>",
         }
 
     if UUID_RE.fullmatch(args_stripped):
@@ -88,10 +110,9 @@ def main():
     parser = argparse.ArgumentParser(description="Resolve Claude Code conversation JSONL files")
     parser.add_argument("--mode", required=True, choices=["resolve"])
     parser.add_argument("--arguments", help="Raw arguments string", default="")
-    parser.add_argument("--project-dir", help="Project directory")
     args = parser.parse_args()
 
-    result = resolve(args.arguments, project_dir=args.project_dir)
+    result = resolve(args.arguments)
     json.dump(result, sys.stdout)
     print("", file=sys.stdout)
     if "error" in result:

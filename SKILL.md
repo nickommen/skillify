@@ -41,7 +41,7 @@ Convert a Claude Code conversation — where the user iterated on automating a t
 Resolve the source conversation JSONL file:
 
 ```
-python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode resolve --arguments "$ARGUMENTS" --project-dir "$PWD"
+python3 ${CLAUDE_SKILL_DIR}/scripts/find_session.py --mode resolve --arguments "$ARGUMENTS"
 ```
 
 Parse the JSON output and handle based on the key present:

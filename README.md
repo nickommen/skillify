@@ -29,23 +29,14 @@ After installation, `/skillify` will be available in Claude Code.
 
 ```bash
 # Skillify the current conversation
+/skillify
 /skillify this
 
 # Skillify a specific past conversation by session ID
 /skillify 15555f6f-ed1d-47fb-b542-efdaff259864
-
-# Browse recent conversations and pick one
-/skillify
 ```
 
 Also triggers on natural language: "turn this into a skill", "make this a skill", "create a skill from this conversation", "convert this to a skill"
-
-## Tips
-
-**Start in a dedicated project directory.** When exploring the task you want to
-skillify, do that work in a new directory — ideally the one that will become the
-skill's repo. This avoids conflicting Claude Code sessions in your main project
-and makes session selection straightforward when you run `/skillify`.
 
 ## How It Works
 
@@ -106,7 +97,7 @@ skillify/
   scripts/
     parse_conversation.py           # JSONL conversation parser
     parse_agent_output.py           # Agent output file extractor
-    find_session.py                 # Session JSONL resolution (recent/uuid/list)
+    find_session.py                 # Session JSONL resolution (pid/uuid)
     validate_skill.py               # Generated skill validation (syntax, frontmatter)
   prompts/
     generate_skill.md               # Generation agent prompt template

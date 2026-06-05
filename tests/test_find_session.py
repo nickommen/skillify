@@ -1,62 +1,111 @@
 """Tests for find_session.py."""
 
+import json
 import os
 
 from scripts.find_session import (
+    find_by_pid,
     find_by_uuid,
-    find_recent,
+    get_ancestor_pids,
     resolve,
 )
 
 
-class TestFindRecent:
-    def test_finds_most_recent_jsonl(self, tmp_path, monkeypatch):
-        slug = "-home-user-myproject"
-        project_dir = tmp_path / "projects" / slug
+class TestGetAncestorPids:
+    def test_yields_current_pid(self):
+        pids = list(get_ancestor_pids())
+        assert pids[0] == os.getpid()
+
+    def test_yields_at_least_two_pids(self):
+        pids = list(get_ancestor_pids())
+        assert len(pids) >= 2
+
+    def test_does_not_include_pid_1(self):
+        pids = list(get_ancestor_pids())
+        assert 1 not in pids
+
+
+class TestFindByPid:
+    def _setup_session(self, tmp_path, pid, session_id, monkeypatch):
+        sessions_dir = tmp_path / "sessions"
+        sessions_dir.mkdir(exist_ok=True)
+        (sessions_dir / f"{pid}.json").write_text(
+            json.dumps({"pid": pid, "sessionId": session_id})
+        )
+        monkeypatch.setattr("scripts.find_session.CLAUDE_SESSIONS_DIR", sessions_dir)
+        return sessions_dir
+
+    def test_finds_session_via_pid(self, tmp_path, monkeypatch):
+        uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        self._setup_session(tmp_path, 1234, uuid, monkeypatch)
+
+        project_dir = tmp_path / "projects" / "some-project"
         project_dir.mkdir(parents=True)
-
-        old = project_dir / "old-session.jsonl"
-        old.write_text("{}")
-        new = project_dir / "new-session.jsonl"
-        new.write_text("{}")
-        os.utime(old, (1000, 1000))
-        os.utime(new, (2000, 2000))
+        jsonl = project_dir / f"{uuid}.jsonl"
+        jsonl.write_text("{}")
 
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = find_recent("/home/user/myproject")
-        assert result == str(new)
+        monkeypatch.setattr("scripts.find_session.get_ancestor_pids", lambda: iter([9999, 1234]))
 
-    def test_returns_none_for_missing_project(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        assert find_recent("/nonexistent/project") is None
+        assert find_by_pid() == str(jsonl)
 
-    def test_returns_none_for_empty_project_dir(self, tmp_path, monkeypatch):
-        slug = "-home-user-emptyproject"
-        project_dir = tmp_path / "projects" / slug
+    def test_skips_non_matching_pids(self, tmp_path, monkeypatch):
+        uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        self._setup_session(tmp_path, 3000, uuid, monkeypatch)
+
+        project_dir = tmp_path / "projects" / "proj"
         project_dir.mkdir(parents=True)
+        jsonl = project_dir / f"{uuid}.jsonl"
+        jsonl.write_text("{}")
 
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        assert find_recent("/home/user/emptyproject") is None
+        monkeypatch.setattr(
+            "scripts.find_session.get_ancestor_pids",
+            lambda: iter([1000, 2000, 3000]),
+        )
 
-    def test_converts_path_to_slug(self, tmp_path, monkeypatch):
-        slug = "-home-user-project"
-        project_dir = tmp_path / "projects" / slug
-        project_dir.mkdir(parents=True)
-        f = project_dir / "abc.jsonl"
-        f.write_text("{}")
+        assert find_by_pid() == str(jsonl)
 
+    def test_returns_none_when_no_sessions_dir(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("scripts.find_session.CLAUDE_SESSIONS_DIR", tmp_path / "nonexistent")
+        assert find_by_pid() is None
+
+    def test_returns_none_when_sessions_dir_empty(self, tmp_path, monkeypatch):
+        sessions_dir = tmp_path / "sessions"
+        sessions_dir.mkdir()
+        monkeypatch.setattr("scripts.find_session.CLAUDE_SESSIONS_DIR", sessions_dir)
+        assert find_by_pid() is None
+
+    def test_returns_none_when_no_pid_matches(self, tmp_path, monkeypatch):
+        self._setup_session(tmp_path, 5555, "some-uuid", monkeypatch)
+        monkeypatch.setattr("scripts.find_session.get_ancestor_pids", lambda: iter([1111, 2222]))
+        assert find_by_pid() is None
+
+    def test_returns_none_on_corrupt_session_file(self, tmp_path, monkeypatch):
+        sessions_dir = tmp_path / "sessions"
+        sessions_dir.mkdir()
+        (sessions_dir / "1234.json").write_text("not json")
+        monkeypatch.setattr("scripts.find_session.CLAUDE_SESSIONS_DIR", sessions_dir)
+        monkeypatch.setattr("scripts.find_session.get_ancestor_pids", lambda: iter([1234]))
+        assert find_by_pid() is None
+
+    def test_returns_none_on_missing_session_id_key(self, tmp_path, monkeypatch):
+        sessions_dir = tmp_path / "sessions"
+        sessions_dir.mkdir()
+        (sessions_dir / "1234.json").write_text(json.dumps({"pid": 1234}))
+        monkeypatch.setattr("scripts.find_session.CLAUDE_SESSIONS_DIR", sessions_dir)
+        monkeypatch.setattr("scripts.find_session.get_ancestor_pids", lambda: iter([1234]))
+        assert find_by_pid() is None
+
+    def test_returns_none_when_jsonl_not_found(self, tmp_path, monkeypatch):
+        uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        self._setup_session(tmp_path, 1234, uuid, monkeypatch)
+
+        (tmp_path / "projects").mkdir()
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = find_recent("/home/user/project")
-        assert result is not None
+        monkeypatch.setattr("scripts.find_session.get_ancestor_pids", lambda: iter([1234]))
 
-    def test_ignores_non_jsonl_files(self, tmp_path, monkeypatch):
-        slug = "-home-user-proj"
-        project_dir = tmp_path / "projects" / slug
-        project_dir.mkdir(parents=True)
-        (project_dir / "notes.txt").write_text("not a jsonl")
-
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        assert find_recent("/home/user/proj") is None
+        assert find_by_pid() is None
 
 
 class TestFindByUuid:
@@ -87,38 +136,39 @@ class TestFindByUuid:
 
 
 class TestResolve:
-    def test_empty_args_returns_path(self, tmp_path, monkeypatch):
-        slug = "-home-user-myproject"
-        project_dir = tmp_path / "projects" / slug
-        project_dir.mkdir(parents=True)
-        session = project_dir / "session.jsonl"
-        session.write_text("{}")
+    def test_empty_args_uses_pid_detection(self, monkeypatch):
+        monkeypatch.setattr(
+            "scripts.find_session.find_by_pid",
+            lambda: "/path/to/session.jsonl",
+        )
+        assert resolve("") == {"path": "/path/to/session.jsonl"}
 
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = resolve("", project_dir="/home/user/myproject")
-        assert result == {"path": str(session)}
+    def test_this_uses_pid_detection(self, monkeypatch):
+        monkeypatch.setattr(
+            "scripts.find_session.find_by_pid",
+            lambda: "/path/to/session.jsonl",
+        )
+        assert resolve("this") == {"path": "/path/to/session.jsonl"}
 
-    def test_this_returns_path(self, tmp_path, monkeypatch):
-        slug = "-home-user-myproject"
-        project_dir = tmp_path / "projects" / slug
-        project_dir.mkdir(parents=True)
-        session = project_dir / "session.jsonl"
-        session.write_text("{}")
+    def test_current_uses_pid_detection(self, monkeypatch):
+        monkeypatch.setattr(
+            "scripts.find_session.find_by_pid",
+            lambda: "/path/to/session.jsonl",
+        )
+        assert resolve("current") == {"path": "/path/to/session.jsonl"}
 
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = resolve("this", project_dir="/home/user/myproject")
-        assert result == {"path": str(session)}
+    def test_this_conversation_uses_pid_detection(self, monkeypatch):
+        monkeypatch.setattr(
+            "scripts.find_session.find_by_pid",
+            lambda: "/path/to/session.jsonl",
+        )
+        assert resolve("this conversation") == {"path": "/path/to/session.jsonl"}
 
-    def test_current_returns_path(self, tmp_path, monkeypatch):
-        slug = "-home-user-myproject"
-        project_dir = tmp_path / "projects" / slug
-        project_dir.mkdir(parents=True)
-        session = project_dir / "session.jsonl"
-        session.write_text("{}")
-
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = resolve("current", project_dir="/home/user/myproject")
-        assert result == {"path": str(session)}
+    def test_pid_detection_failure_returns_error(self, monkeypatch):
+        monkeypatch.setattr("scripts.find_session.find_by_pid", lambda: None)
+        result = resolve("")
+        assert "error" in result
+        assert "/skillify <uuid>" in result["error"]
 
     def test_uuid_returns_path(self, tmp_path, monkeypatch):
         uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -140,24 +190,8 @@ class TestResolve:
         assert "error" in result
         assert uuid in result["error"]
 
-    def test_this_no_session_returns_error(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = resolve("this", project_dir="/nonexistent/project")
-        assert "error" in result
-        assert "/skillify" in result["error"]
-
-    def test_this_no_project_dir_returns_error(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = resolve("this")
-        assert "error" in result
-
     def test_unrecognized_argument_returns_error(self, tmp_path, monkeypatch):
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
         result = resolve("some-random-text")
         assert "error" in result
         assert "Unrecognized argument" in result["error"]
-
-    def test_empty_no_project_dir_returns_error(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        result = resolve("")
-        assert "error" in result
