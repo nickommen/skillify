@@ -50,19 +50,6 @@ Also triggers on natural language: "turn this into a skill", "make this a skill"
 8. **Validate** generated Python syntax and YAML frontmatter
 9. **Report** created files, tool dependencies, env vars needed, and how to invoke
 
-## Configuration
-
-Optionally create `~/.claude/skillify.json` to set defaults:
-
-```json
-{
-  "default_save_location": "~/skills",
-  "author": ""
-}
-```
-
-All fields are optional. Without a config file, skillify uses sensible defaults.
-
 ## Generated Skill Structure
 
 When skillify generates a new skill, it creates:
