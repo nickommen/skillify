@@ -26,20 +26,11 @@ These are places where the user redirected the approach during the original conv
 
 {EXISTING_SCRIPTS}
 
-## Tool Mode
+## Tool Dependencies
 
-**Mode:** `{TOOL_MODE}`
-
-- `preserve` (default): the generated skill uses the same MCP tools and CLIs from the source conversation. MCP tool calls become `allowed-tools` entries in the SKILL.md frontmatter with fixed parameters in the procedure.
-- `standalone`: all tool calls are converted to REST API calls using `urllib.request`. No MCP dependency.
-
-**Tool dependencies (for preserve mode):**
+The generated skill preserves the same MCP tools and CLIs from the source conversation. MCP tool calls become `allowed-tools` entries in the SKILL.md frontmatter with fixed parameters in the procedure.
 
 {TOOL_DEPENDENCIES}
-
-**REST API mappings (for standalone mode only):**
-
-{MCP_API_MAPPINGS}
 
 ## Preconditions
 
@@ -65,9 +56,7 @@ These are places where the user redirected the approach during the original conv
 4. **Paginated API calls** — if the workflow queries APIs that return paginated results, implement pagination (e.g., Jira's `startAt` + `maxResults`).
 5. **Constants at the top** — extract project keys, component names, API base URLs, JQL templates, and other configuration to named constants at the top of the script.
 6. **No runtime discovery** — hard-code field names, project keys, and query parameters. The skill should not need to discover these at runtime.
-7. **Tool handling** — depends on tool mode:
-   - **Preserve mode:** Python scripts handle data transformation, formatting, and report generation. The SKILL.md procedure calls MCP tools and CLIs directly (the same ones used in the source conversation). Scripts receive tool output via stdin or file arguments.
-   - **Standalone mode:** Replace all MCP tool calls with equivalent REST API calls using `urllib.request`. Use the REST API mappings provided above for endpoint details.
+7. **Tool handling** — Python scripts handle data transformation, formatting, and report generation. The SKILL.md procedure calls MCP tools and CLIs directly (the same ones used in the source conversation). Scripts receive tool output via stdin or file arguments.
 8. **Error handling** — catch HTTP errors, parse error responses, print actionable messages to stderr.
 
 ### validators.py Requirements
@@ -194,7 +183,7 @@ Output each file in a clearly marked section. The file paths are relative to the
 - If the manifest shows the conversation already produced a working Python script (in `existing_scripts`), adapt and improve it rather than rewriting from scratch
 - Self-contained stdlib-only Python, credentials validated upfront, paginated API calls, progress on stderr, structured output on stdout
 - Use `$CLAUDE_SKILL_DIR` to reference files relative to the skill directory in SKILL.md
-- **Preserve source tools by default.** MCP tools with fixed inputs are already deterministic — only convert to REST when tool mode is "standalone"
+- **Preserve source tools.** MCP tools with fixed inputs are already deterministic — keep them as `allowed-tools` entries in the SKILL.md frontmatter
 - **Generated skills are reusable capabilities.** Other LLM sessions can invoke the skill, chain its output, or use it as a building block. Design the interface (description, schema, output format) accordingly.
 - **Use AskUserQuestion for user interaction** — during recovery, confirmations, and choices. The built-in "Other" option handles free-text fallback.
 - **validators.py runs first** — precondition failures should be caught before any real work starts, with clear messages about what's missing and how to fix it

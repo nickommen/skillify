@@ -43,7 +43,7 @@ Also triggers on natural language: "turn this into a skill", "make this a skill"
 1. **Identify** the source conversation — current project session or explicit session UUID
 2. **Parse** the conversation JSONL into a compact workflow manifest using `parse_conversation.py`
 3. **Supplement** with git state and project type detection for additional context
-4. **Interview** the user to confirm skill name, description, save location, tool mode, and workflow steps. For non-trivial workflows, also captures preconditions, idempotency, and escalation rules.
+4. **Interview** the user to confirm skill name, description, save location, and workflow steps. For non-trivial workflows, also captures preconditions, idempotency, and escalation rules.
 5. **Check** if the conversation already produced Python scripts — reuse if possible
 6. **Generate** Python scripts, validators, and SKILL.md via an Agent reading the manifest
 7. **Preview** generated files for user confirmation before writing
@@ -70,12 +70,6 @@ Generated skills are designed to be:
 - **Composable** — other LLM sessions can invoke the skill via `/skill-name` or the `Skill` tool
 - **Self-validating** — `validators.py` checks preconditions before execution
 
-## Tool Modes
-
-By default, generated skills **preserve the tools** used in the source conversation (MCP tools, CLIs like `gh`, etc.). This is the recommended approach — MCP tools with fixed inputs are already deterministic.
-
-Optionally, you can choose **standalone mode** during the interview, which converts all tool calls to REST API calls using `urllib.request`. This removes MCP dependencies but adds complexity (auth handling, pagination, URL construction).
-
 ## Project Structure
 
 ```text
@@ -88,7 +82,6 @@ skillify/
     validate_skill.py               # Generated skill validation (syntax, frontmatter)
   prompts/
     generate_skill.md               # Generation agent prompt template
-    rest_api_reference.md           # REST endpoint reference (standalone mode)
   tests/
     test_parse_conversation.py      # Parser tests
     test_parse_agent_output.py      # Agent output parser tests
