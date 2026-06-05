@@ -1,6 +1,27 @@
-# skillify
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/skillify-banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/skillify-banner-light.svg">
+    <img alt="skillify" src="assets/skillify-banner-light.svg" width="500">
+  </picture>
+</p>
 
-Convert a Claude Code conversation — where you iterated on automating a task — into a deterministic Python-scripted skill. Skillify parses the conversation JSONL, extracts the workflow (API calls, data transforms, output format), and generates Python scripts + a SKILL.md wrapper. Future runs of the generated skill are deterministic, using AI only for error recovery and semantic summarization.
+<h3 align="center"><em>Turn conversations into skills.</em></h3>
+
+<p align="center">
+  <a href="https://github.com/nickommen/skillify/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nickommen/skillify/ci.yml?branch=main&style=flat-square" alt="CI"></a>
+  <img src="https://img.shields.io/badge/python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License"></a>
+</p>
+
+---
+
+Skillify converts a Claude Code conversation — where you iterated on automating a task — into a deterministic Python-scripted skill. It parses the conversation, extracts the workflow, and generates Python scripts + a SKILL.md wrapper. Future runs are deterministic, using AI only for error recovery and semantic summarization.
+
+## Prerequisites
+
+- Python 3.12+
+- Claude Code with skill support
 
 ## Installation
 
@@ -19,12 +40,6 @@ ln -sf "$(pwd)/skillify" ~/.claude/skills/skillify
 
 After installation, `/skillify` will be available in Claude Code.
 
-## Prerequisites
-
-- Python 3.12+
-- No pip dependencies — stdlib only
-- Claude Code with skill support
-
 ## Usage
 
 ```bash
@@ -40,10 +55,10 @@ Also triggers on natural language: "turn this into a skill", "make this a skill"
 
 ## How It Works
 
-1. **Identify** the source conversation — current project session or explicit session UUID
-2. **Parse** the conversation JSONL into a compact workflow manifest using `parse_conversation.py`
+1. **Identify** the source conversation — current session or explicit session UUID
+2. **Parse** the conversation JSONL into a compact workflow manifest
 3. **Supplement** with git state and project type detection for additional context
-4. **Interview** the user to confirm skill name, description, save location, and workflow steps. For non-trivial workflows, also captures preconditions, idempotency, and escalation rules.
+4. **Interview** the user to confirm skill name, description, save location, and workflow steps
 5. **Check** if the conversation already produced Python scripts — reuse if possible
 6. **Generate** Python scripts, validators, and SKILL.md via an Agent reading the manifest
 7. **Preview** generated files for user confirmation before writing
@@ -51,8 +66,6 @@ Also triggers on natural language: "turn this into a skill", "make this a skill"
 9. **Report** created files, tool dependencies, env vars needed, and how to invoke
 
 ## Generated Skill Structure
-
-When skillify generates a new skill, it creates:
 
 ```text
 skill-name/
@@ -64,42 +77,12 @@ skill-name/
   skill.schema.json     # Input/output schema (when applicable)
 ```
 
-Generated skills are designed to be:
+Generated skills are **deterministic**, **composable** (invokable via `/skill-name`), and **self-validating**.
 
-- **Deterministic** — Python scripts handle all API calls, data transforms, and formatting
-- **Composable** — other LLM sessions can invoke the skill via `/skill-name` or the `Skill` tool
-- **Self-validating** — `validators.py` checks preconditions before execution
+## Contributing
 
-## Project Structure
-
-```text
-skillify/
-  SKILL.md                          # Skillify's own skill definition
-  scripts/
-    parse_conversation.py           # JSONL conversation parser
-    parse_agent_output.py           # Agent output file extractor
-    find_session.py                 # Session JSONL resolution (pid/uuid)
-    validate_skill.py               # Generated skill validation (syntax, frontmatter)
-  prompts/
-    generate_skill.md               # Generation agent prompt template
-  tests/
-    test_parse_conversation.py      # Parser tests
-    test_parse_agent_output.py      # Agent output parser tests
-    test_find_session.py            # Session resolution tests
-    test_validate_skill.py          # Skill validation tests
-    fixtures/                       # Synthetic test data
-  install.sh                        # One-line installer
-```
-
-## Development
-
-```bash
-uv venv .venv && source .venv/bin/activate
-uv sync
-pytest --cov             # tests + coverage
-ruff check scripts/ tests/  # lint
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
-MIT
+[MIT](LICENSE)
