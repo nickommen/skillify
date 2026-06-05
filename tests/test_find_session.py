@@ -59,7 +59,10 @@ class TestFindByPid:
         jsonl.write_text("{}")
 
         monkeypatch.setattr("scripts.find_session.CLAUDE_PROJECTS_DIR", tmp_path / "projects")
-        monkeypatch.setattr("scripts.find_session.get_ancestor_pids", lambda: iter([1000, 2000, 3000]))
+        monkeypatch.setattr(
+            "scripts.find_session.get_ancestor_pids",
+            lambda: iter([1000, 2000, 3000]),
+        )
 
         assert find_by_pid() == str(jsonl)
 
