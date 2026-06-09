@@ -5,3 +5,10 @@ __pycache__/
 .coverage
 .pytest_cache/
 .ruff_cache/
+
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+secrets.json
