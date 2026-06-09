@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-<h3 align="center"><em>Turn conversations into skills.</em></h3>
+<h3 align="center"><em>Conversations Are Prototypes. Skills Are Artifacts.</em></h3>
 
 <p align="center">
   <a href="https://github.com/nickommen/skillify/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nickommen/skillify/ci.yml?branch=main&style=flat-square" alt="CI"></a>
@@ -57,13 +57,12 @@ Also triggers on natural language: "turn this into a skill", "make this a skill"
 
 1. **Identify** the source conversation — current session or explicit session UUID
 2. **Parse** the conversation JSONL into a compact workflow manifest
-3. **Supplement** with git state and project type detection for additional context
-4. **Interview** the user to confirm skill name, description, save location, and workflow steps
-5. **Check** if the conversation already produced Python scripts — reuse if possible
-6. **Generate** Python scripts, validators, and SKILL.md via an Agent reading the manifest
-7. **Preview** generated files for user confirmation before writing
-8. **Validate** generated Python syntax and YAML frontmatter
-9. **Report** created files, tool dependencies, env vars needed, and how to invoke
+3. **Interview** the user to confirm skill name, description, save location, and workflow steps
+4. **Check** if the conversation already produced Python scripts — reuse if possible
+5. **Generate** Python scripts, validators, and SKILL.md via an Agent reading the manifest
+6. **Preview** generated files for user confirmation before writing
+7. **Write and validate** generated Python syntax and YAML frontmatter
+8. **Report** created files, tool dependencies, env vars needed, and how to invoke
 
 ## Generated Skill Structure
 
