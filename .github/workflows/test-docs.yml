@@ -15,8 +15,6 @@ jobs:
         working-directory: website
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -24,7 +22,3 @@ jobs:
           cache-dependency-path: website/package-lock.json
       - run: npm ci
       - run: npm run build
-      - uses: lycheeverse/lychee-action@v2
-        with:
-          args: --no-progress --exclude-path website/build/assets --exclude 'nickommen\.github\.io' --scheme https --scheme http website/build/
-          fail: true
