@@ -26,5 +26,5 @@ jobs:
       - run: npm run build
       - uses: lycheeverse/lychee-action@v2
         with:
-          args: --no-progress website/build/
+          args: --no-progress --base website/build --exclude 'nickommen\.github\.io' website/build/
           fail: true
