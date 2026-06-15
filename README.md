@@ -12,6 +12,7 @@
   <a href="https://github.com/nickommen/skillify/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nickommen/skillify/ci.yml?branch=main&style=flat-square" alt="CI"></a>
   <img src="https://img.shields.io/badge/python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License"></a>
+  <a href="https://nickommen.github.io/skillify/"><img src="https://img.shields.io/badge/docs-online-blue?style=flat-square" alt="Documentation"></a>
 </p>
 
 ---
@@ -77,6 +78,10 @@ skill-name/
 ```
 
 Generated skills are **deterministic**, **composable** (invokable via `/skill-name`), and **self-validating**.
+
+## Documentation
+
+Full documentation is available at [nickommen.github.io/skillify](https://nickommen.github.io/skillify/).
 
 ## Contributing
 
