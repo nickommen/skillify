@@ -1,0 +1,32 @@
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.tagline {
+  margin-top: 1rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.badges {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.content {
+  line-height: 1.7;
+}
+
+.content h2 {
+  margin-top: 2rem;
+}

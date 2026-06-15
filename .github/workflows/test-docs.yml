@@ -1,0 +1,24 @@
+name: Test Docs Build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "website/**"
+      - ".github/workflows/test-docs.yml"
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+      - run: npm run build
