@@ -47,6 +47,10 @@ const config = {
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
         },
+        gtag: {
+          trackingID: 'G-00KJRGW3DB',
+          anonymizeIP: true,
+        },
         theme: {
           customCss: './src/css/custom.css',
         },
