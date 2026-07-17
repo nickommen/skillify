@@ -9,7 +9,7 @@ license = "MIT"
 dev = [
     "pytest>=8.0",
     "pytest-cov>=6.0",
-    "ruff>=0.11",
+    "ruff>=0.15.22",
 ]
 
 [tool.pytest.ini_options]
